@@ -37,7 +37,6 @@
 
         h1 { font-size: 22px; margin-top: 0; text-align: center; }
 
-        /* Секция профиля */
         .profile-header {
             display: flex;
             justify-content: space-between;
@@ -54,10 +53,11 @@
             color: #555;
             padding: 6px 12px;
             font-size: 12px;
+            border: none;
             border-radius: 6px;
+            cursor: pointer;
         }
 
-        /* Список пользователей */
         #groupList {
             display: flex;
             flex-direction: column;
@@ -72,7 +72,6 @@
             background: #fafafa;
             border: 1px solid var(--border);
             border-radius: 12px; 
-            transition: transform 0.2s;
         }
 
         .status-dot { 
@@ -86,44 +85,38 @@
         .user-info strong { font-size: 15px; display: block; }
         .user-info small { color: #65676b; font-size: 13px; }
 
-        /* Кнопки управления */
         .controls { 
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr; 
             gap: 10px; 
         }
 
-        button { 
+        .controls button { 
             padding: 12px 5px; 
             cursor: pointer; 
             border: none; 
             border-radius: 8px; 
             font-weight: 600;
             font-size: 13px;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            color: white;
+            transition: transform 0.1s;
         }
 
-        button:active { transform: scale(0.96); }
+        .controls button:active { transform: scale(0.95); }
 
-        /* Кнопка Google */
         #btn-login {
             width: 100%;
             background: var(--primary);
             color: white;
             font-size: 16px;
             padding: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
             margin-top: 20px;
         }
 
         .hidden { display: none; }
-
-        /* Анимация пульсации для активного статуса */
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
     </style>
 </head>
 <body>
@@ -131,7 +124,7 @@
     <div class="container">
         <div id="auth-section">
             <h1>Статус Монитор</h1>
-            <p style="text-align:center; color: #666;">Войдите, чтобы делиться своим статусом с командой</p>
+            <p style="text-align:center; color: #666;">Войдите через Google, чтобы обновить свой статус</p>
             <button id="btn-login">Войти через Google</button>
         </div>
 
@@ -146,95 +139,100 @@
             </div>
 
             <div class="controls">
-                <button style="background: #4caf50; color: white;" onclick="changeStatus('Работаю', '#4caf50')">Работаю</button>
-                <button style="background: #ff9800; color: white;" onclick="changeStatus('Обедаю', '#ff9800')">Обедаю</button>
-                <button style="background: #f44336; color: white;" onclick="changeStatus('Отдыхаю', '#f44336')">Отдыхаю</button>
+                <button style="background: #4caf50;" onclick="changeStatus('Работаю', '#4caf50')">Работаю</button>
+                <button style="background: #ff9800;" onclick="changeStatus('Обедаю', '#ff9800')">Обедаю</button>
+                <button style="background: #f44336;" onclick="changeStatus('Отдыхаю', '#f44336')">Отдыхаю</button>
             </div>
         </div>
     </div>
 
-   <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-// ❗ правильные значения
-const URL = 'https://tqtpdtforramqzhjqalf.supabase.co';
-const KEY = 'sb_publishable_byK1ZC0fIZS-UU8HOWF43Q_JpBt1f9h'; 
+        // Конфигурация твоей новой базы
+        const URL = 'https://tqtpdtforramqzhjqalf.supabase.co';
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdHBkdGZvcnJhbXF6aGpxYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDQyNDUsImV4cCI6MjA5MTM4MDI0NX0.c6bFblzCpMXn0ssNZD8BeOlzk21aTdO1fjxhPEVluuk';
 
-const supabase = createClient(URL, KEY);
+        const supabase = createClient(URL, KEY);
+        let userSession = null;
 
-let userSession = null;
+        // Вход
+        document.getElementById('btn-login').onclick = async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        };
 
-document.getElementById('btn-login').onclick = async () => {
-    await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { 
-            redirectTo: window.location.origin + '/ghost/' // 🔥 важно для GitHub Pages
+        // Выход
+        document.getElementById('btn-logout').onclick = async () => {
+            await supabase.auth.signOut();
+            window.location.reload();
+        };
+
+        // Смена статуса
+        window.changeStatus = async (statusText, statusColor) => {
+            if (!userSession) return;
+            
+            const { error } = await supabase
+                .from('profiles')
+                .upsert({ 
+                    id: userSession.id, 
+                    username: userSession.user_metadata.full_name || userSession.email,
+                    status: statusText, 
+                    color: statusColor 
+                });
+
+            if (error) {
+                console.error('Ошибка записи:', error);
+                alert("Ошибка! Проверь, создана ли таблица 'profiles' и настроены ли RLS политики.");
+            } else {
+                fetchGroup();
+            }
+        };
+
+        // Получение данных
+        async function fetchGroup() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('username');
+
+            if (error) {
+                console.error('Ошибка загрузки:', error);
+                return;
+            }
+
+            const listContainer = document.getElementById('groupList');
+            listContainer.innerHTML = data.map(user => `
+                <div class="user-item">
+                    <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+                    <div class="user-info">
+                        <strong>${user.username || 'Участник'}</strong>
+                        <small>${user.status || 'Статус не установлен'}</small>
+                    </div>
+                </div>
+            `).join('');
+
+            const currentUser = data.find(u => u.id === userSession.id);
+            if (currentUser) {
+                document.getElementById('myInfo').innerText = `👤 ${currentUser.username}`;
+            }
         }
-    });
-};
 
-document.getElementById('btn-logout').onclick = async () => {
-    await supabase.auth.signOut();
-    window.location.reload();
-};
+        // Проверка сессии при загрузке
+        async function init() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                userSession = data.session.user;
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                fetchGroup();
+                setInterval(fetchGroup, 5000); // Автообновление каждые 5 сек
+            }
+        }
 
-window.changeStatus = async (statusText, statusColor) => {
-    if (!userSession) return;
-    
-    const { error } = await supabase
-        .from('profiles')
-        .upsert({ 
-            id: userSession.id, 
-            username: userSession.user_metadata.full_name || userSession.email,
-            status: statusText, 
-            color: statusColor 
-        });
-
-    if (error) {
-        console.error('Ошибка:', error);
-        alert("Ошибка доступа. Проверь RLS в Supabase");
-    } else {
-        fetchGroup();
-    }
-};
-
-async function fetchGroup() {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('username');
-
-    if (error) return;
-
-    const listContainer = document.getElementById('groupList');
-    listContainer.innerHTML = data.map(user => `
-        <div class="user-item">
-            <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-            <div class="user-info">
-                <strong>${user.username || 'Участник'}</strong>
-                <small>${user.status || 'Статус не установлен'}</small>
-            </div>
-        </div>
-    `).join('');
-
-    const currentUser = data.find(u => u.id === userSession.id);
-    if (currentUser) {
-        document.getElementById('myInfo').innerText = `👤 ${currentUser.username}`;
-    }
-}
-
-async function init() {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-        userSession = data.session.user;
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('app-section').classList.remove('hidden');
-        fetchGroup();
-        setInterval(fetchGroup, 5000);
-    }
-}
-
-init();
-</script>
+        init();
+    </script>
 </body>
 </html>
