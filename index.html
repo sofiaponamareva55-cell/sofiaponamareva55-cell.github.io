@@ -3,236 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Статус Монитор</title>
+    <title>Work Monitor Pro</title>
     <style>
         :root {
-            --bg: #f0f2f5;
+            --bg: #f4f7f6;
             --card: #ffffff;
-            --text: #1c1e21;
+            --text: #333;
             --primary: #4285F4;
-            --border: #e4e6eb;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --success: #2ecc71;
+            --gray: #95a5a6;
         }
 
         body { 
-            font-family: 'Inter', -apple-system, system-ui, sans-serif; 
-            background-color: var(--bg); 
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); color: var(--text); 
+            display: flex; justify-content: center; padding: 20px; margin: 0;
         }
 
-        .container {
-            width: 100%;
-            max-width: 450px;
-            background: var(--card);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+        .app-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        h1 { font-size: 22px; margin-top: 0; text-align: center; }
+        .user-card { text-align: center; }
+        .user-name { font-weight: bold; font-size: 18px; margin-bottom: 10px; display: block; }
+        .timer-display { font-size: 28px; font-weight: bold; color: var(--primary); margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        button { border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        
+        /* Кнопка старта/стопа */
+        .btn-main { background: var(--success); color: white; width: 100%; grid-column: span 2; }
+        .btn-main.active { background: var(--danger) !important; }
+        
+        .btn-break { background: var(--warning); color: white; }
+        .btn-exit { background: var(--gray); color: white; }
 
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        #myInfo { font-weight: 600; font-size: 14px; }
-
-        #btn-logout {
-            background: #f2f2f2;
-            color: #555;
-            padding: 6px 12px;
-            font-size: 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        #groupList {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-
+        .section-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .user-list { display: flex; flex-direction: column; gap: 8px; }
         .user-item { 
-            display: flex; 
-            align-items: center; 
-            padding: 12px 16px; 
-            background: #fafafa;
-            border: 1px solid var(--border);
-            border-radius: 12px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; border-radius: 12px; background: #fff; border: 1px solid #eee;
         }
+        .online-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; display: inline-block; margin-right: 8px; }
+        .online-dot.active { background: var(--success); box-shadow: 0 0 5px var(--success); }
 
-        .status-dot { 
-            width: 14px; 
-            height: 14px; 
-            border-radius: 50%; 
-            margin-right: 15px; 
-            box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.05);
-        }
-
-        .user-info strong { font-size: 15px; display: block; }
-        .user-info small { color: #65676b; font-size: 13px; }
-
-        .controls { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 10px; 
-        }
-
-        .controls button { 
-            padding: 12px 5px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: 600;
-            font-size: 13px;
-            color: white;
-            transition: transform 0.1s;
-        }
-
-        .controls button:active { transform: scale(0.95); }
-
-        #btn-login {
-            width: 100%;
-            background: var(--primary);
-            color: white;
-            font-size: 16px;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
+        .chat-box { height: 150px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px; font-size: 13px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .chat-input-group { display: flex; gap: 5px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        .btn-send { background: var(--success); color: white; }
 
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="auth-section">
-            <h1>Статус Монитор</h1>
-            <p style="text-align:center; color: #666;">Войдите через Google, чтобы обновить свой статус</p>
-            <button id="btn-login">Войти через Google</button>
+<div class="app-container">
+    <div id="auth-section" class="card" style="text-align: center;">
+        <h1>Work Monitor</h1>
+        <button id="btn-login" style="background: var(--primary); color: white; width: 100%;">Войти через Google</button>
+    </div>
+
+    <div id="app-section" class="hidden">
+        <div class="card user-card">
+            <span id="display-name" class="user-name">Загрузка...</span>
+            <div class="timer-display">
+                <span>⏱️</span> <span id="stopwatch">00:00:00</span>
+            </div>
+            <div class="btn-grid">
+                <button id="session-btn" class="btn-main" onclick="handleSession()">🚀 Начать сессию</button>
+                <button class="btn-break" onclick="togglePause()">☕ Перерыв</button>
+                <button class="btn-exit" onclick="logout()">Выход</button>
+            </div>
         </div>
 
-        <div id="app-section" class="hidden">
-            <div class="profile-header">
-                <div id="myInfo">Загрузка...</div>
-                <button id="btn-logout">Выйти</button>
-            </div>
-            
-            <div id="groupList">
-                <p style="text-align:center; color:#999;">Обновление списка...</p>
-            </div>
+        <div class="card">
+            <div class="section-title">👥 Монитор группы</div>
+            <div id="group-list" class="user-list"></div>
+        </div>
 
-            <div class="controls">
-                <button style="background: #4caf50;" onclick="changeStatus('Работаю', '#4caf50')">Работаю</button>
-                <button style="background: #ff9800;" onclick="changeStatus('Обедаю', '#ff9800')">Обедаю</button>
-                <button style="background: #f44336;" onclick="changeStatus('Отдыхаю', '#f44336')">Отдыхаю</button>
+        <div class="card">
+            <div class="section-title">💬 Общий чат</div>
+            <div id="chat-messages" class="chat-box"></div>
+            <div class="chat-input-group">
+                <input type="text" id="chat-input" placeholder="Сообщение...">
+                <button class="btn-send" onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<script type="module">
+   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
         // Конфигурация твоей новой базы
         const URL = 'https://tqtpdtforramqzhjqalf.supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdHBkdGZvcnJhbXF6aGpxYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDQyNDUsImV4cCI6MjA5MTM4MDI0NX0.c6bFblzCpMXn0ssNZD8BeOlzk21aTdO1fjxhPEVluuk';
 
-        const supabase = createClient(URL, KEY);
-        let userSession = null;
+    const supabase = createClient(URL, KEY);
 
-        // Вход
-        document.getElementById('btn-login').onclick = async () => {
-            await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin }
-            });
-        };
+    let user = null;
+    let profiles = [];
+    let seconds = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    let isSessionActive = false;
 
-        // Выход
-        document.getElementById('btn-logout').onclick = async () => {
-            await supabase.auth.signOut();
-            window.location.reload();
-        };
+    // Инициализация
+    async function init() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            user = session.user;
+            showApp();
+        } else {
+            document.getElementById('auth-section').classList.remove('hidden');
+        }
+    }
 
-        // Смена статуса
-        window.changeStatus = async (statusText, statusColor) => {
-            if (!userSession) return;
+    function showApp() {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        document.getElementById('display-name').innerText = user.user_metadata.full_name || user.email;
+        
+        setupRealtime();
+        fetchInitialData();
+        trackPresence();
+        
+        setInterval(renderUserList, 1000);
+    }
+
+    // ЛОГИКА СЕССИИ (Исправлено переключение кнопки)
+    window.handleSession = async () => {
+        const btn = document.getElementById('session-btn');
+        
+        if (!isSessionActive) {
+            isSessionActive = true;
+            isPaused = false;
+            seconds = 0;
+            const startTime = new Date().toISOString();
             
-            const { error } = await supabase
-                .from('profiles')
-                .upsert({ 
-                    id: userSession.id, 
-                    username: userSession.user_metadata.full_name || userSession.email,
-                    status: statusText, 
-                    color: statusColor 
-                });
+            btn.innerText = "🛑 Завершить сессию";
+            btn.classList.add('active');
 
-            if (error) {
-                console.error('Ошибка записи:', error);
-                alert("Ошибка! Проверь, создана ли таблица 'profiles' и настроены ли RLS политики.");
-            } else {
-                fetchGroup();
+            await supabase.from('profiles.').upsert({
+                id: user.id,
+                username: user.user_metadata.full_name || user.email,
+                status: 'Учится',
+                started_at: startTime
+            });
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    seconds++;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        } else {
+            isSessionActive = false;
+            clearInterval(timerInterval);
+            btn.innerText = "🚀 Начать сессию";
+            btn.classList.remove('active');
+            
+            await supabase.from('profiles.').update({ 
+                status: 'Дома',
+                started_at: null 
+            }).eq('id', user.id);
+            
+            seconds = 0;
+            updateTimerDisplay();
+        }
+    };
+
+    function updateTimerDisplay() {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('stopwatch').innerText = `${h}:${m}:${s}`;
+    }
+
+    window.togglePause = () => {
+        if (!isSessionActive) return;
+        isPaused = !isPaused;
+        const btn = document.querySelector('.btn-break');
+        btn.innerText = isPaused ? '▶️ Продолжить' : '☕ Перерыв';
+        btn.style.background = isPaused ? '#2ecc71' : '#f1c40f';
+    };
+
+    // МОНИТОР ГРУППЫ (Исправлено отображение имен из Google)
+    async function fetchInitialData() {
+        const { data } = await supabase.from('profiles.').select('*');
+        profiles = data || [];
+        renderUserList();
+        fetchChat();
+    }
+
+    function setupRealtime() {
+        supabase.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles.' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                    profiles.push(payload.new);
+                } else if (payload.eventType === 'UPDATE') {
+                    profiles = profiles.map(p => p.id === payload.new.id ? payload.new : p);
+                }
+                renderUserList();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                addMessageToUI(payload.new);
+            })
+            .subscribe();
+    }
+
+    function trackPresence() {
+        const channel = supabase.channel('online-users');
+        channel.on('presence', { event: 'sync' }, () => {
+            window.currentOnlineUsers = Object.values(channel.presenceState()).flat().map(i => i.user_id);
+            renderUserList();
+        }).subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') await channel.track({ user_id: user.id });
+        });
+    }
+
+    function renderUserList() {
+        const container = document.getElementById('group-list');
+        container.innerHTML = profiles.map(p => {
+            const isOnline = (window.currentOnlineUsers || []).includes(p.id);
+            let timeStr = "0ч 0м 0с";
+            if (p.started_at) {
+                const diff = Math.floor((new Date() - new Date(p.started_at)) / 1000);
+                const h = Math.floor(diff / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                const s = diff % 60;
+                timeStr = `${h}ч ${m}м ${s}с`;
             }
-        };
 
-        // Получение данных
-        async function fetchGroup() {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('username');
-
-            if (error) {
-                console.error('Ошибка загрузки:', error);
-                return;
-            }
-
-            const listContainer = document.getElementById('groupList');
-            listContainer.innerHTML = data.map(user => `
+            return `
                 <div class="user-item">
-                    <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-                    <div class="user-info">
-                        <strong>${user.username || 'Участник'}</strong>
-                        <small>${user.status || 'Статус не установлен'}</small>
+                    <div>
+                        <span class="online-dot ${isOnline ? 'active' : ''}"></span>
+                        <strong>${p.username || 'Участник'}</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 11px; color: #666;">🏠 ${p.status || 'Дома'}</div>
+                        <div style="font-size: 11px; color: var(--primary); font-weight: bold;">⏱️ ${timeStr}</div>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
+    }
 
-            const currentUser = data.find(u => u.id === userSession.id);
-            if (currentUser) {
-                document.getElementById('myInfo').innerText = `👤 ${currentUser.username}`;
-            }
-        }
+    // ЧАТ
+    async function fetchChat() {
+        const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(30);
+        if (data) data.forEach(addMessageToUI);
+    }
 
-        // Проверка сессии при загрузке
-        async function init() {
-            const { data } = await supabase.auth.getSession();
-            if (data.session) {
-                userSession = data.session.user;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('app-section').classList.remove('hidden');
-                fetchGroup();
-                setInterval(fetchGroup, 5000); // Автообновление каждые 5 сек
-            }
-        }
+    window.sendMessage = async () => {
+        const input = document.getElementById('chat-input');
+        if (!input.value.trim()) return;
+        await supabase.from('messages').insert({
+            user_id: user.id,
+            user_name: user.user_metadata.full_name || user.email,
+            content: input.value.trim()
+        });
+        input.value = '';
+    };
 
-        init();
-    </script>
+    function addMessageToUI(msg) {
+        const box = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${msg.user_name}:</strong> ${msg.content}`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // КНОПКА ВЫХОДА (Исправлено)
+    window.logout = async () => {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        location.reload();
+    };
+
+    document.getElementById('btn-login').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
+
+    init();
+</script>
 </body>
 </html>
